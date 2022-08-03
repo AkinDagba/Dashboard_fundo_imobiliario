@@ -1,0 +1,93 @@
+---
+title: "Fundos imobiliarios"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(DT)
+library(dplyr)
+library(rvest)
+
+site <- "https://www.fundsexplorer.com.br/ranking"
+
+ fii <- read_html(site) %>%
+  html_table()
+
+fii <- fii [[1]] %>%
+  
+   select( 
+    `Códigodo fundo`, Setor, `Preço Atual`, `Liquidez Diária`,
+    Dividendo, DividendYield, `DY (3M)Acumulado`, `DY (6M)Acumulado`
+  )
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+numericInput(
+  "Preço Atual", label = "VALOR DA COTA ATÉ:" ,
+  value = 150
+)
+
+numericInput(
+  "DividendYield", label = "DIVIDEND YELD MAIOR QUE:",
+  value = 4
+)
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+```{r}
+sliderInput(
+  "Dividendo", label = "DIVIDENDO ENTRE:",
+  min = 0, max = 2, step = 0.1,
+  value= c(0.4,1.2)
+)
+
+
+sliderInput(
+  "Liquidez Diária", label =  "LIQUIDEZ MAIOR QUE:",
+  min = 0, max = 2000000, step =100000,
+  value = 100000, pre = "R$"
+  )
+
+sliderInput(
+  "DY (3M)Acumulado", label = "DY(3M) ACUMULADO MENOR QUE:",
+  min = 0, max = 30, step  = 5, 
+  value = 30 , post = "%" 
+)
+
+sliderInput(
+  "DY (6M)Acumulado", label = "DY(6M) ACUMULADO MENOR QUE:",
+  min = 0, max = 30, step  = 5, 
+  value = 30 , post = "%" 
+)
+```
+
+Column 
+-----------------------------------------------------------------------
+
+### FUNDOS IMOBILIÁRIOS
+
+```{r}
+renderDataTable({
+  fii %>%
+    filter(
+      (`Preço Atual` <= input$preço_atual),
+      (`DividendYield` >= input$`dividend_yeld`),
+      (`Dividendo`>= input$dividendo[1]), (`Dividendo`<= input$dividendo[2]),
+      (`Liquidez Diária`>= input$ `liquidez diaria`),
+      (`DY (3M)Acumulado`>= input$`Dy(3m)Acumulado`),
+      (`DY (6M)Acumulado`<= input$`Dy(6m)Acumulado`)
+    )%>%
+    datable(rownames = FALSE)%>%
+    formatRound(c('DividendYield', 'Preço Atual', 'Dividendo','Liquidez Diária'), digits = 2)
+})
+```
+
